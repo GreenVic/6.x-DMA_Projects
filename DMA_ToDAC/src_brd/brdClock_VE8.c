@@ -1,5 +1,7 @@
 #include "brdClock.h"
 
+uint32_t BRD_CPU_CLK = (uint32_t)8000000; 
+
 void BRD_Clock_Init_HSE0_PLL(uint32_t pll_Q, uint32_t pll_N)
 {  
     POR_disable();
@@ -17,7 +19,9 @@ void BRD_Clock_Init_HSE0_PLL(uint32_t pll_Q, uint32_t pll_N)
 	CLKCTRL_CPU_PLLconfig(PLL0, CLKCTRL_PLLn_CLK_SELECT_HSE0div1, pll_Q, pll_N);  //  PLLn, SRC, Q, N
 	while(CLKCTRL_CPU_PLLstatus(0) != SUCCESS){};
 	
-	CLKCTRL_MAX_CLKSelection(CLKCTRL_MAX_CLK_PLL0);	     
+	CLKCTRL_MAX_CLKSelection(CLKCTRL_MAX_CLK_PLL0);
+    
+  BRD_CPU_CLK = HSE0_Value * (pll_N + 2)/ (pll_Q + 1);
 }
 
 void BRD_Clock_Init_HSE0_60MHz(void)

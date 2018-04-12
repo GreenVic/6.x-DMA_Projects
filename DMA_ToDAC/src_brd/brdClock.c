@@ -1,5 +1,8 @@
 #include "brdClock.h"
 
+
+uint32_t BRD_CPU_CLK = (uint32_t)8000000;
+
 // -------------------------- USE_MDR1986VE1x ---------------------	
 #ifdef USE_MDR1986VE1T
 
@@ -20,8 +23,10 @@ void SetSelectRI(SelectRI extraI)
 	MDR_BKP->REG_0E = temp;		
 }
 
-void BRD_Clock_Init_HSE_PLL(uint32_t PLL_Mul)
+void BRD_Clock_Init_HSE_PLL(uint32_t PLL_Mul_sub1)
 {
+  uint32_t freqCPU;
+  
 	RST_CLK_DeInit();
 	
 	/* Enable HSE (High Speed External) clock */
@@ -29,7 +34,7 @@ void BRD_Clock_Init_HSE_PLL(uint32_t PLL_Mul)
 	while (RST_CLK_HSEstatus() != SUCCESS);
 
 //	/* Configures the CPU_PLL clock source */
-	RST_CLK_CPU_PLLconfig(RST_CLK_CPU_PLLsrcHSEdiv1, PLL_Mul);
+	RST_CLK_CPU_PLLconfig(RST_CLK_CPU_PLLsrcHSEdiv1, PLL_Mul_sub1);
 
 	/* Enables the CPU_PLL */
 	RST_CLK_CPU_PLLcmd(ENABLE);
@@ -38,24 +43,25 @@ void BRD_Clock_Init_HSE_PLL(uint32_t PLL_Mul)
 	/* Enables the RST_CLK_PCLK_EEPROM */
 	RST_CLK_PCLKcmd(RST_CLK_PCLK_EEPROM, ENABLE);
 
-		/* Sets the code latency value */
-	if (PLL_Mul * HSE_Value < 25E+6)
+	/* Sets the code latency value */
+  freqCPU = HSE_Value * (PLL_Mul_sub1 + 1);
+	if (freqCPU < 25E+6)
 		EEPROM_SetLatency(EEPROM_Latency_0);
-	else if (PLL_Mul * HSE_Value < 50E+6)
+	else if (freqCPU < 50E+6)
 		EEPROM_SetLatency(EEPROM_Latency_1);
-	else if (PLL_Mul * HSE_Value < 75E+6)
+	else if (freqCPU < 75E+6)
 		EEPROM_SetLatency(EEPROM_Latency_2);
-	else if (PLL_Mul * HSE_Value < 100E+6)
+	else if (freqCPU < 100E+6)
 		EEPROM_SetLatency(EEPROM_Latency_3);
-	else if (PLL_Mul * HSE_Value < 125E+6)
+	else if (freqCPU < 125E+6)
 		EEPROM_SetLatency(EEPROM_Latency_4);
 	else //if (PLL_Mul * HSE_Value <= 150E+6)
 		EEPROM_SetLatency(EEPROM_Latency_5);
 
 	//	Additional Supply Power
-	if (PLL_Mul * HSE_Value < 40E+6)
+	if (freqCPU < 40E+6)
 		SetSelectRI(RI_till_40MHz);
-	else if (PLL_Mul * HSE_Value < 80E+6)
+	else if (freqCPU < 80E+6)
 		SetSelectRI(RI_till_80MHz);
 	else 
 		SetSelectRI(RI_over_80MHz);	
@@ -67,6 +73,9 @@ void BRD_Clock_Init_HSE_PLL(uint32_t PLL_Mul)
 
 	/* Select the CPU clock source */
 	RST_CLK_CPUclkSelection(RST_CLK_CPUclkCPU_C3);
+  
+  //  Update System Clock
+  BRD_CPU_CLK = freqCPU;  
 }
 
 void BRD_Clock_Init_HSE_dir(void)  
@@ -84,13 +93,16 @@ void BRD_Clock_Init_HSE_dir(void)
 	RST_CLK_CPUclkPrescaler(RST_CLK_CPUclkDIV1);
 	/* Select the CPU clock source */
 	RST_CLK_CPUclkSelection(RST_CLK_CPUclkCPU_C3);
+  
+  //  Update System Clock
+  BRD_CPU_CLK = HSE_Value;    
 }
 
 
 // -------------------------- USE_MDR1986VE9x ---------------------	
 #elif defined ( USE_MDR1986VE9x ) || defined ( USE_MDR1986BE4 )
 
-void BRD_Clock_Init_HSE_PLL(uint32_t PLL_Mul)  // 128 MHz
+void BRD_Clock_Init_HSE_PLL(uint32_t PLL_Mul_sub1)  // 128 MHz
 {
   // Сброс настроек системы тактирования
   RST_CLK_DeInit();
@@ -105,7 +117,7 @@ void BRD_Clock_Init_HSE_PLL(uint32_t PLL_Mul)  // 128 MHz
 
   // Настройка источника и коэффициента умножения PLL
   // (CPU_C1_SEL = HSE)
-  RST_CLK_CPU_PLLconfig (RST_CLK_CPU_PLLsrcHSEdiv1, PLL_Mul);
+  RST_CLK_CPU_PLLconfig (RST_CLK_CPU_PLLsrcHSEdiv1, PLL_Mul_sub1);
   while (RST_CLK_CPU_PLLstatus() != SUCCESS);
 
   // Подключение PLL к системе тактирования
@@ -119,6 +131,9 @@ void BRD_Clock_Init_HSE_PLL(uint32_t PLL_Mul)  // 128 MHz
   // Использование процессором сигнала CPU_C3
   // (HCLK = CPU_C3)
   RST_CLK_CPUclkSelection (RST_CLK_CPUclkCPU_C3);
+  
+  //  Update System Clock
+  BRD_CPU_CLK = HSE_Value * (PLL_Mul_sub1 + 1);
 }
 
 void BRD_Clock_Init_HSE_dir(void)  
@@ -133,12 +148,15 @@ void BRD_Clock_Init_HSE_dir(void)
 	RST_CLK_CPUclkPrescaler(RST_CLK_CPUclkDIV1);
 	/* Select the CPU clock source */
 	RST_CLK_CPUclkSelection(RST_CLK_CPUclkCPU_C3);
+  
+  //  Update System Clock
+  BRD_CPU_CLK = HSE_Value;  
 }
 
 // -------------------------- USE_MDR1986VE3 ---------------------
 #elif defined ( USE_MDR1986VE3 ) 
 
-void BRD_Clock_Init_HSE_PLL(uint32_t PLL_Mul)  // 128 MHz
+void BRD_Clock_Init_HSE_PLL(uint32_t PLL_Mul_sub1)  // 128 MHz
 {
 	RST_CLK_DeInit();
 	
@@ -147,7 +165,7 @@ void BRD_Clock_Init_HSE_PLL(uint32_t PLL_Mul)  // 128 MHz
 	while (RST_CLK_HSEstatus() != SUCCESS);
 
 //	/* Configures the CPU_PLL clock source */
-	RST_CLK_CPU_PLLconfig(RST_CLK_CPU_PLLsrcHSEdiv1, PLL_Mul);
+	RST_CLK_CPU_PLLconfig(RST_CLK_CPU_PLLsrcHSEdiv1, PLL_Mul_sub1);
 
 	/* Enables the CPU_PLL */
 	RST_CLK_CPU_PLLcmd(ENABLE);
@@ -177,6 +195,9 @@ void BRD_Clock_Init_HSE_PLL(uint32_t PLL_Mul)  // 128 MHz
 
 	/* Select the CPU clock source */
 	RST_CLK_CPUclkSelection(RST_CLK_CPUclkCPU_C3);
+  
+  //  Update System Clock
+  BRD_CPU_CLK = HSE_Value * (PLL_Mul_sub1 + 1);    
 }
 
 

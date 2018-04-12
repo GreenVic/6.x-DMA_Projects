@@ -23,6 +23,7 @@
   #include <MDR32F9Qx_timer.h>
 #endif
 
+#include "brdClock.h"
 
 typedef struct
 {
@@ -34,7 +35,7 @@ typedef struct
   
 } Timer_Obj;
 
-void BRD_Timer_InitStructDef(TIMER_CntInitTypeDef *TimerInitStruct, uint32_t Pll_Mul, uint32_t freq);
+void BRD_Timer_InitStructDef(TIMER_CntInitTypeDef *TimerInitStruct, uint32_t freq, uint32_t rangeCNT);
 void BRD_Timer_Init(Timer_Obj *TimerObj, TIMER_CntInitTypeDef *TimerInitStruct);
 void BRD_Timer_InitIRQ(Timer_Obj *TimerObj, uint32_t priority);
 void BRD_Timer_Start(Timer_Obj *TimerObj);
@@ -42,6 +43,10 @@ void BRD_Timer_Start(Timer_Obj *TimerObj);
 //  Calc Period for output signal by Timer (with DMA)
 //  TimerInitStruct->TIMER_Prescaler = 0; 
 //  TimerInitStruct->TIMER_Period    = CALC_PERIOD(((SystemCoreClock, 1000, 100); 
-#define CALC_PERIOD(CoreClock, SignalFreq, BuffSize) ((uint16_t)((CoreClock / (uint32_t)(SignalFreq * BuffSize)) - 1))
+#if defined (USE_MDR1986VE3) || defined (USE_MDR1986VE1T)
+  #define CALC_PERIOD(Clock, SignalFreq, BuffSize) ((uint32_t)(((Clock) / (uint32_t)((SignalFreq) * (BuffSize))) - 1))
+#else
+  #define CALC_PERIOD(Clock, SignalFreq, BuffSize) ((uint16_t)(((Clock) / (uint32_t)((SignalFreq) * (BuffSize))) - 1))
+#endif
 
 #endif //_BRD_TIMER_H

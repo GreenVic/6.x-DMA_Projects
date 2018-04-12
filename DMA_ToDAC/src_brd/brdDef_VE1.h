@@ -65,7 +65,7 @@
                                         ))
 
 //  ----------    DMA Definition -------------
-    #define DMA_CLOCK_SELECT  (RST_CLK_PCLK_SSP1 | RST_CLK_PCLK_SSP2 | RST_CLK_PCLK_SSP3 | RST_CLK_PCLK_DMA)
+    #define BRD_DMA_CLOCK_SELECT  (RST_CLK_PCLK_SSP1 | RST_CLK_PCLK_SSP2 | RST_CLK_PCLK_SSP3 |RST_CLK_PCLK_DMA)
 
 
 //  ----------    ExtBUS Definition -------------
@@ -173,6 +173,15 @@
                                     MDR_PORTA->RXTX |= (value & 0xFF);
                                     
     #define LCD_CODE_READ     (uint8_t)(MDR_PORTA->RXTX & 0xFF);
+
+//  ----------    DAC Definition -------------
+    #define BRD_DAC1_CLOCK    RST_CLK_PCLK_PORTE
+    #define BRD_DAC1_PORT     MDR_PORTE
+    #define BRD_DAC1_PIN      PORT_Pin_1
+    
+    #define BRD_DAC2_CLOCK    RST_CLK_PCLK_PORTE
+    #define BRD_DAC2_PORT     MDR_PORTE
+    #define BRD_DAC2_PIN      PORT_Pin_2
 
 
 #else

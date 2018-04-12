@@ -1,13 +1,14 @@
+#include <math.h>
+
 #include "brdTimer.h"
 
-void BRD_Timer_InitStructDef(TIMER_CntInitTypeDef *TimerInitStruct, uint32_t Pll_Mul, uint32_t freq)
+void BRD_Timer_InitStructDef(TIMER_CntInitTypeDef *TimerInitStruct, uint32_t freq, uint32_t rangeCNT)
 {
+  uint32_t presc = ceil((double) BRD_CPU_CLK / (rangeCNT * freq));
+    
   TIMER_CntStructInit (TimerInitStruct);
-  TimerInitStruct->TIMER_IniCounter       = 0;                                      // Начальное значение таймера
-  TimerInitStruct->TIMER_Prescaler        = Pll_Mul;                                      // Предделитель частоты
-  TimerInitStruct->TIMER_Period           = CALC_PERIOD(SystemCoreClock, freq, 1);  // Период таймера 1KHz (от HSI = 8МГц) = 8000
-  TimerInitStruct->TIMER_CounterMode      = TIMER_CntMode_ClkFixedDir;              // Режим счета
-  TimerInitStruct->TIMER_CounterDirection = TIMER_CntDir_Up;                        // Направление счета
+  TimerInitStruct->TIMER_Prescaler        = presc - 1;                          // Предделитель частоты
+  TimerInitStruct->TIMER_Period           = BRD_CPU_CLK / (presc * freq) - 1;   // Период таймера, (при -1 точнее выводится частоты сигнала в DAC по DMA)
 }
 
 

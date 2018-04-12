@@ -13,7 +13,9 @@ DMA_CtrlDataInitTypeDef DMA_DataCtrl_Pri =
   DMA_MemoryDataSize_HalfWord,  // DMA_MemoryDataSize - Размер пакета данных
   DMA_Mode_Basic,               // DMA_Mode           - Режим работы DMA
   10,                           // DMA_CycleSize      - Кол. данных на передачу (длина цикла DMA)
-  DMA_Transfers_1024,           // DMA_NumContinuous  - Количество непрерывных передач (до арбитража)
+  DMA_Transfers_1,              // DMA_NumContinuous  - Количество непрерывных передач (до арбитража)
+                                //   В 1986ВЕ1Т другие значения не использовать  - таймер вырабатывает req - DMA выводит весь период за один запрос таймера (CNT ==ARR)!
+                                //   В 1986ВЕ9х можно вплоть до DMA_Transfers_1  - таймер НЕ вырабатывает req (только sreq), DMA выводит по одному значению за один запрос таймера (CNT ==ARR)!
   DMA_SourcePrivileged,         // DMA_SourceProtCtrl - Режим защиты передатчика
   DMA_DestPrivileged            // DMA_DestProtCtrl   - Режим защиты приемника
 };
