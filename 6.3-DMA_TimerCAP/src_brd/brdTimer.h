@@ -23,7 +23,15 @@
   #include <MDR32F9Qx_timer.h>
   
   #ifdef USE_BOARD_VE_1
-    #define Timer1_IRQn   TIMER1_IRQn
+    #define Timer1_IRQn       TIMER1_IRQn
+    #define Timer2_IRQn       TIMER2_IRQn
+    #define Timer3_IRQn       TIMER3_IRQn
+    #define Timer4_IRQn       TIMER4_IRQn    
+    
+    #define DMA_Channel_TIM1  DMA_Channel_SREQ_TIM1
+    #define DMA_Channel_TIM2  DMA_Channel_SREQ_TIM2
+    #define DMA_Channel_TIM3  DMA_Channel_SREQ_TIM3
+    #define DMA_Channel_TIM4  DMA_Channel_SREQ_TIM4
   #endif  
   
 #endif

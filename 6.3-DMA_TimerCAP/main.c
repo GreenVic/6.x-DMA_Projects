@@ -37,16 +37,31 @@ Timer_Obj brdTimerCap =
 #define DMA_CHANNEL_CAP     DMA_Channel_TIM1          //  Канал DMA обслуживающий TIMER1
 #define DMA_IRQ_PRIORITY    1                         //  Приоритет прерывания DMA
 
-//  Вход PA9 - TMR1_CH4, вход захвата для подачи сигнала от ШИМ
-brdPort_Obj Port_TimerPinCAP = 
-{
-  .PORTx          = MDR_PORTA,
-  .Port_ClockMask = RST_CLK_PCLK_PORTA,
-  .Port_PinsSel   = PORT_Pin_9,
-  .Port_PinsFunc  = PORT_FUNC_ALTER,
-  .Port_PinsFunc_ClearMask = 0,                     //  Здесь не используется
-  .pInitStruct    = &pinTimerCAP                    //  Настройки пина для захвата по умолчанию - TaskDefs.h
-};
+
+//  Выбор GPIO - входа для Захвата сигнала от ШИМ
+#if defined ( USE_BOARD_VE_91 )  || defined ( USE_BOARD_VE_94 )
+  //  Вход PA9 - TMR1_CH4
+  brdPort_Obj Port_TimerPinCAP = 
+  {
+    .PORTx          = MDR_PORTA,
+    .Port_ClockMask = RST_CLK_PCLK_PORTA,
+    .Port_PinsSel   = PORT_Pin_9,
+    .Port_PinsFunc  = PORT_FUNC_ALTER,
+    .Port_PinsFunc_ClearMask = 0,                     //  Здесь не используется
+    .pInitStruct    = &pinTimerCAP                    //  Настройки пина для захвата по умолчанию - TaskDefs.h
+  };
+#elif defined ( USE_BOARD_VE_1 )
+  //  Вход PE6 - TMR1_CH4
+  brdPort_Obj Port_TimerPinCAP = 
+  {
+    .PORTx          = MDR_PORTE,
+    .Port_ClockMask = RST_CLK_PCLK_PORTE,
+    .Port_PinsSel   = PORT_Pin_6,
+    .Port_PinsFunc  = PORT_FUNC_MAIN,
+    .Port_PinsFunc_ClearMask = 0,                     //  Здесь не используется
+    .pInitStruct    = &pinTimerCAP                    //  Настройки пина для захвата по умолчанию - TaskDefs.h
+  };
+#endif 
 
 
 //  -----------   Таймер ШИМ  - Timer3  -------
@@ -62,27 +77,56 @@ Timer_Obj brdTimerPWM =
 
 //  Выбор канала таймера для вывода ШИМ
 #define TIM_CHANNEL_PWM     TIMER_CHANNEL1          //  1-й канал
-#define TIM_PWM_PERIOD      20                      //  Начальный период ШИМ по умолчанию - TaskDefs.h
-#define TIM_PWM_WIDTH       7                       //  Длительность импульса ШИМ
+#define TIM_PWM_PERIOD      20                      //  Начальный период ШИМ по умолчанию
+#define TIM_PWM_WIDTH       3                       //  Длительность импульса ШИМ
 
-//  Вывод PF7 - TMR3_CH1, выход сигнала ШИМ
-brdPort_Obj Port_TimerPinPWM = 
-{
-  .PORTx          = MDR_PORTF,
-  .Port_ClockMask = RST_CLK_PCLK_PORTF,
-  .Port_PinsSel   = PORT_Pin_7,
-  .Port_PinsFunc  = PORT_FUNC_OVERRID,
-  .Port_PinsFunc_ClearMask = 0,                     //  Здесь не используется
-  .pInitStruct    = &pinTimerPWM                    //  Настройки пина для ШИМ по умолчанию
-};
+//  Выбор GPIO - вывода сигнала ШИМ
+#if defined ( USE_BOARD_VE_91 )  || defined ( USE_BOARD_VE_94 )
+  //  Вывод PF7 - TMR3_CH1
+  brdPort_Obj Port_TimerPinPWM = 
+  {
+    .PORTx          = MDR_PORTF,
+    .Port_ClockMask = RST_CLK_PCLK_PORTF,
+    .Port_PinsSel   = PORT_Pin_7,
+    .Port_PinsFunc  = PORT_FUNC_OVERRID,
+    .Port_PinsFunc_ClearMask = 0,                     //  Здесь не используется
+    .pInitStruct    = &pinTimerPWM                    //  Настройки пина для ШИМ по умолчанию - TaskDefs.h
+  };
+#elif defined ( USE_BOARD_VE_1 )
+  //  Вывод PB0 - TMR3_CH1
+  brdPort_Obj Port_TimerPinPWM = 
+  {
+    .PORTx          = MDR_PORTB,
+    .Port_ClockMask = RST_CLK_PCLK_PORTB,
+    .Port_PinsSel   = PORT_Pin_0,
+    .Port_PinsFunc  = PORT_FUNC_OVERRID,
+    .Port_PinsFunc_ClearMask = 0,                     //  Здесь не используется
+    .pInitStruct    = &pinTimerPWM                    //  Настройки пина для ШИМ по умолчанию - TaskDefs.h
+  };
+#endif
 
 //  -----------   Переменные и определения для задачи  -------
+#if defined ( USE_BOARD_VE_91 )  || defined ( USE_BOARD_VE_94 )
+  #define uintCCR_t         uint16_t
+  
+  //#define DMA_CASE_SREQ_DIS
+  
+#elif defined ( USE_BOARD_VE_1 )
+  #define uintCCR_t         uint32_t
+#endif  
+  
+#ifdef DMA_CASE_SREQ_DIS
+  #define PASS_FIRST_DATA   1
+#else
+  #define PASS_FIRST_DATA   0
+#endif
+  
 #define   DATA_COUNT  16                      //  Количество событий захвата для измерения частоты, равно кол-ву передач в цикле DMA
-uint16_t  arrDataCCR[DATA_COUNT];             //  Массив куда DMA будет копировать данные из регистра захвата
-uint16_t  arrPeriod[DATA_COUNT - 1];          //  Массив дельт, между событиями захвата. Для анализа при отладке
-uint32_t  passDataCap = 0;                    //  Кол-во первых дельт, пропускаемых при подсчете периода. 
+//  Массив куда DMA будет копировать данные из регистра захвата
+uintCCR_t  arrDataCCR[DATA_COUNT] __attribute__((section("EXECUTABLE_MEMORY_SECTION"))) __attribute__ ((aligned (4)));
+uintCCR_t  arrPeriod[DATA_COUNT - 1];         //  Массив дельт, между событиями захвата. Для анализа при отладке
+uint32_t   passDataCap = PASS_FIRST_DATA;     //  Кол-во первых дельт, пропускаемых при подсчете периода. 
                                               //  Начальные значения битые из-за пересинхронизации частот таймера и DMA при высоких частотах PWM
-
 uint32_t  capPeriodPWM = TIM_PWM_PERIOD;      //  Период ШИМ, меняется кнопками UP/DOWN
 uint32_t  dmaChanCtrlStart;                   //  Управляющее слово настроенного канала DMA, используется для перенастройки DMA на новый цикл.
 
@@ -100,7 +144,7 @@ uint32_t DoWaitAndRunNextMeas;                //  Флаг на выдержку
 uint32_t cntWait;                             //  Счетчик задержки на отображение экрана
 
 //  Стирание предыдущих данных захвата
-void ClearCaptureData(uint16_t data);
+void ClearCaptureData(uintCCR_t data);
 //  Вычисление периода
 uint32_t CalcPeriod(uint32_t passOffset, uint32_t * errCnt);
 
@@ -109,6 +153,8 @@ void LCD_ShowResult(uint32_t periodCap, uint32_t errCnt);
 void LCD_ShowSettings(uint32_t periodPWM, uint32_t dataOffs);
 //  Обработка кнопок на изменение capPeriodPWM и passDataCap
 void ProcessBtnCommands(void);
+//  Разрешение sreq к DMA от таймера захвата
+void TimerCap_CallDMAEna(FunctionalState enable);
 
 int main(void)
 {
@@ -155,15 +201,22 @@ int main(void)
   DMA_DataCtrl_Pri.DMA_SourceBaseAddr = (uint32_t)&brdTimerCap.TIMERx->TIM_REG_CCR;
   DMA_DataCtrl_Pri.DMA_DestBaseAddr   = (uint32_t)&arrDataCCR;
   DMA_DataCtrl_Pri.DMA_CycleSize      = DATA_COUNT;
+#ifdef USE_BOARD_VE_1
+  DMA_DataCtrl_Pri.DMA_DestIncSize    = DMA_DestIncWord,
+  DMA_DataCtrl_Pri.DMA_MemoryDataSize = DMA_MemoryDataSize_Word,
+#endif  
+  
   BRD_DMA_Init_Channel(DMA_CHANNEL_CAP, &DMA_ChanCtrl);
   
   BRD_DMA_InitIRQ(DMA_IRQ_PRIORITY);
   
   //  Сохранение управляющего слова канала DMA, для следующих перезапусков
   dmaChanCtrlStart = BRD_DMA_Read_ChannelCtrl(DMA_CHANNEL_CAP);
+  //  Заполнение начальных данных любым значением
+  ClearCaptureData(3); 
 
   //  Разрешение запросов sreq к DMA по событию захвата фронта сигнала на входе канала таймера
-  TIMER_DMACmd (brdTimerCap.TIMERx, TIM_DMA_SREQ_CCR, ENABLE);
+  TimerCap_CallDMAEna(ENABLE);
 
   //  Запуск таймеров. 
   //    Вывод ШИМ выдает сигнал на вход для захвата, по внешнему подключнию пинов проводами на демо-плате (PF7 <-> PA9).
@@ -198,21 +251,29 @@ int main(void)
       if (!(--cntWait))
       {
         DoWaitAndRunNextMeas = 0;
+       
+        //  Очистка предыдущих данных
+        ClearCaptureData(3);
 
-        //  Сброс счетчика, чтобы не обрабатывать ситуацию переполнения счета с 0xFFFF в 0x0000, при подсчете дельт захвата
+        //  Сброс счетчика, чтобы не обрабатывать ситуацию переполнения счета с 0xFFFF в 0x0000
         TIMER_SetCounter(brdTimerCap.TIMERx, 0);
         
-        //  Очистка предыдущих данных
-        ClearCaptureData(0);   
+#ifdef DMA_CASE_SREQ_DIS
+        
         //  Перезапуск канала DMA
         BRD_DMA_Write_ChannelCtrl(DMA_CHANNEL_CAP, dmaChanCtrlStart);
         DMA_Cmd (DMA_CHANNEL_CAP, ENABLE);
-        
         //  Разрешение запросов от событий захвата к каналу DMA
         TIMER_DMACmd (brdTimerCap.TIMERx, TIM_DMA_SREQ_CCR, ENABLE);
         //  Разрешение обработки одиночных запросов (sreq) к каналу DMA
         MDR_DMA->CHNL_USEBURST_CLR |= 1 << DMA_CHANNEL_CAP;
         
+#else
+        //  Разрешение запросов от событий захвата к каналу DMA
+        TimerCap_CallDMAEna(ENABLE);
+
+#endif         
+
         ++cntStart;    
       }
       else //  Обработка нажатия кнопок и изменение настроек
@@ -222,21 +283,41 @@ int main(void)
 
 void DMA_IRQHandler (void)
 {
-  //  Запрет запросов от событий захвата к каналу DMA
-  TIMER_DMACmd (brdTimerCap.TIMERx, TIM_DMA_SREQ_CCR, DISABLE);
+  volatile uint32_t val;
   
-  //  НЕЖДАНЧИК:
+  //  Запрет запросов от событий захвата к каналу DMA
+  TimerCap_CallDMAEna(DISABLE);
+
+#ifdef DMA_CASE_SREQ_DIS
+  
   //  Несмотря на запрет запросов от таймера, прерывания все-равно генерируются. Даже если замаскировать канал.
-  //  Предполагаю, что поскольку таймеры продолжают работать и события захвата генерятся, то это становится причиной генерации прерываний.
-  //  Спецификация что-то подобное описывает как "запросы к ядру от запрещенных каналов" - правила DMA 19-21.
+  //  Предполагаю, что поскольку таймеры продолжают работать 
+  //        и события захвата генерятся, то это становится причиной прерываний.
+  //  Спецификация подобное описывает как "запросы к ядру от запрещенных каналов" - правила DMA 19-21.
   //  Помог запрет обработки одиночных запросов к DMA, выход из прерывания состоялся:
   MDR_DMA->CHNL_USEBURST_SET |= 1 << DMA_CHANNEL_CAP;
   
+#else
+  
+  //  Переинициализация следующего цикла
+  BRD_DMA_Write_ChannelCtrl(DMA_CHANNEL_CAP, dmaChanCtrlStart);
+  DMA_Cmd(DMA_CHANNEL_CAP, ENABLE);  
+#endif  
+  
   //  Выставление флага на обработку результатов
   DoCheckResult = 1;
-  
+
   // Сброс возможных отложенных прерываний
   NVIC_ClearPendingIRQ (DMA_IRQn);
+}
+
+void TimerCap_CallDMAEna(FunctionalState enable)
+{
+#ifdef USE_BOARD_VE_1
+  TIMER_DMACmd(brdTimerCap.TIMERx, TIM_DMA_SREQ_CCR, TIMER_DMA_Channel0, enable);
+#else
+  TIMER_DMACmd(brdTimerCap.TIMERx, TIM_DMA_SREQ_CCR, enable);
+#endif
 }
 
 
@@ -288,7 +369,7 @@ void ProcessBtnCommands(void)
   } 
 }
 
-void ClearCaptureData(uint16_t data)
+void ClearCaptureData(uintCCR_t data)
 {
   uint32_t i;
   for (i = 0; i < DATA_COUNT; ++i)
