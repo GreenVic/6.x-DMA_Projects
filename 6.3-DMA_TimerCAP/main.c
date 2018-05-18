@@ -108,25 +108,16 @@ Timer_Obj brdTimerPWM =
 //  -----------   Переменные и определения для задачи  -------
 #if defined ( USE_BOARD_VE_91 )  || defined ( USE_BOARD_VE_94 )
   #define uintCCR_t         uint16_t
-  
-  //#define DMA_CASE_SREQ_DIS
-  
 #elif defined ( USE_BOARD_VE_1 )
   #define uintCCR_t         uint32_t
 #endif  
-  
-#ifdef DMA_CASE_SREQ_DIS
-  #define PASS_FIRST_DATA   1
-#else
-  #define PASS_FIRST_DATA   0
-#endif
-  
+   
 #define   DATA_COUNT  16                      //  Количество событий захвата для измерения частоты, равно кол-ву передач в цикле DMA
 //  Массив куда DMA будет копировать данные из регистра захвата
 uintCCR_t  arrDataCCR[DATA_COUNT] __attribute__((section("EXECUTABLE_MEMORY_SECTION"))) __attribute__ ((aligned (4)));
 uintCCR_t  arrPeriod[DATA_COUNT - 1];         //  Массив дельт, между событиями захвата. Для анализа при отладке
-uint32_t   passDataCap = PASS_FIRST_DATA;     //  Кол-во первых дельт, пропускаемых при подсчете периода. 
-                                              //  Начальные значения битые из-за пересинхронизации частот таймера и DMA при высоких частотах PWM
+uint32_t   passDataCap = 1;                   //  Кол-во первых дельт, пропускаемых при подсчете периода. 
+                                              //  1-е значение всегда битое см. DMA_IRQHandler.
 uint32_t  capPeriodPWM = TIM_PWM_PERIOD;      //  Период ШИМ, меняется кнопками UP/DOWN
 uint32_t  dmaChanCtrlStart;                   //  Управляющее слово настроенного канала DMA, используется для перенастройки DMA на новый цикл.
 
@@ -186,7 +177,6 @@ int main(void)
   
   //  ТАЙМЕР ЗАХВАТА
   //  Настройка счетчика таймера захвата
-  TIMER_CntStructInit (&TimerInitStruct);
   TimerInitStruct.TIMER_Period     = 0xFFFF;  //  Max period
   BRD_Timer_Init(&brdTimerCap, &TimerInitStruct);  
   //  Настройка канала таймера на захват внешнего сигнала (от ШИМ)
@@ -207,11 +197,11 @@ int main(void)
 #endif  
   
   BRD_DMA_Init_Channel(DMA_CHANNEL_CAP, &DMA_ChanCtrl);
-  
   BRD_DMA_InitIRQ(DMA_IRQ_PRIORITY);
   
   //  Сохранение управляющего слова канала DMA, для следующих перезапусков
   dmaChanCtrlStart = BRD_DMA_Read_ChannelCtrl(DMA_CHANNEL_CAP);
+  
   //  Заполнение начальных данных любым значением
   ClearCaptureData(3); 
 
@@ -258,21 +248,8 @@ int main(void)
         //  Сброс счетчика, чтобы не обрабатывать ситуацию переполнения счета с 0xFFFF в 0x0000
         TIMER_SetCounter(brdTimerCap.TIMERx, 0);
         
-#ifdef DMA_CASE_SREQ_DIS
-        
-        //  Перезапуск канала DMA
-        BRD_DMA_Write_ChannelCtrl(DMA_CHANNEL_CAP, dmaChanCtrlStart);
-        DMA_Cmd (DMA_CHANNEL_CAP, ENABLE);
-        //  Разрешение запросов от событий захвата к каналу DMA
-        TIMER_DMACmd (brdTimerCap.TIMERx, TIM_DMA_SREQ_CCR, ENABLE);
-        //  Разрешение обработки одиночных запросов (sreq) к каналу DMA
-        MDR_DMA->CHNL_USEBURST_CLR |= 1 << DMA_CHANNEL_CAP;
-        
-#else
         //  Разрешение запросов от событий захвата к каналу DMA
         TimerCap_CallDMAEna(ENABLE);
-
-#endif         
 
         ++cntStart;    
       }
@@ -288,21 +265,25 @@ void DMA_IRQHandler (void)
   //  Запрет запросов от событий захвата к каналу DMA
   TimerCap_CallDMAEna(DISABLE);
 
-#ifdef DMA_CASE_SREQ_DIS
-  
-  //  Несмотря на запрет запросов от таймера, прерывания все-равно генерируются. Даже если замаскировать канал.
-  //  Предполагаю, что поскольку таймеры продолжают работать 
-  //        и события захвата генерятся, то это становится причиной прерываний.
-  //  Спецификация подобное описывает как "запросы к ядру от запрещенных каналов" - правила DMA 19-21.
-  //  Помог запрет обработки одиночных запросов к DMA, выход из прерывания состоялся:
-  MDR_DMA->CHNL_USEBURST_SET |= 1 << DMA_CHANNEL_CAP;
-  
-#else
-  
-  //  Переинициализация следующего цикла
+  //  Переинициализация следующего цикла DMA:
+  //    На момент вызова TimerCap_CallDMAEna(DISABLE) со стороны таймера стоит запрос к DMA на передачу из CCR.
+  //    После запрета формирования запросов от таймера к DMA, новые не будут формируются, 
+  //    но текущий сигнал запроса остается активным.
+  //    При запуске нового цикла DMA, запрос сразу же отрабатывается и 
+  //    первое значение в массиве arrDataCCR заполняется текущим значеним CCR.
+  //    Это значение нельзя рассматривать для вычисления периода - поэтому passDataCap = 1.
   BRD_DMA_Write_ChannelCtrl(DMA_CHANNEL_CAP, dmaChanCtrlStart);
-  DMA_Cmd(DMA_CHANNEL_CAP, ENABLE);  
-#endif  
+  DMA_Cmd(DMA_CHANNEL_CAP, ENABLE);
+  
+  //  !!! - Здесь происходит перезапись значения arrDataCCR[0] = CCRx - !!!
+  
+  // Если не разрещить следующий цикл DMA, то выйти из прерывания не удастся, даже если замаскировать и выключить канал.
+  // Висящий запрос на обработку будет постоянно генерировать прерывание!
+  //  Спецификация подобное описывает как "запросы к ядру от запрещенных каналов" - правила DMA 19-21.
+  //  Без переинициализации цикла, 
+  //  в случае 1986ВЕ9х выйти из прерывания помогает запрет обработки одиночных запросов:
+  //    MDR_DMA->CHNL_USEBURST_SET |= 1 << DMA_CHANNEL_CAP;  
+  //  В 1986ВЕ1Т такой подход не помог.
   
   //  Выставление флага на обработку результатов
   DoCheckResult = 1;
