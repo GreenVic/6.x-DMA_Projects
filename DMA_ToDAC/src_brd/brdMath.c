@@ -6,13 +6,13 @@
 
 void FillSin(uint16_t count, uint16_t *pBuff, uint16_t amp, uint16_t bias)
 {
-  float    omega;  // Период сигнала
+  float    omega;  // РџРµСЂРёРѕРґ СЃРёРіРЅР°Р»Р°
   uint16_t i;
 
-  // Разделение периода сигнала на величину буфера
+  // Р Р°Р·РґРµР»РµРЅРёРµ РїРµСЂРёРѕРґР° СЃРёРіРЅР°Р»Р° РЅР° РІРµР»РёС‡РёРЅСѓ Р±СѓС„РµСЂР°
   omega = 2 * PI / count; 
 
-  // Цикл формирования сигнала
+  // Р¦РёРєР» С„РѕСЂРјРёСЂРѕРІР°РЅРёСЏ СЃРёРіРЅР°Р»Р°
   for (i = 0; i < count; i++)
     pBuff[i] = bias + amp * sin(omega * i);
 }
@@ -22,10 +22,10 @@ void FillSaw(uint16_t count, uint16_t *pBuff, uint16_t amp, uint16_t bias)
   float    k;
   uint16_t i;
 
-  // Разделение амплитуды сигнала на величину буфера
+  // Р Р°Р·РґРµР»РµРЅРёРµ Р°РјРїР»РёС‚СѓРґС‹ СЃРёРіРЅР°Р»Р° РЅР° РІРµР»РёС‡РёРЅСѓ Р±СѓС„РµСЂР°
   k = (float) amp / count; 
 
-  // Цикл формирования сигнала
+  // Р¦РёРєР» С„РѕСЂРјРёСЂРѕРІР°РЅРёСЏ СЃРёРіРЅР°Р»Р°
   for (i = 0; i < count; i++)
      pBuff[i] = bias + k * i;
 }
@@ -57,7 +57,7 @@ void FillMeandr(uint16_t count, uint16_t *pBuff, uint16_t amp, uint16_t bias, fl
 	uint16_t fallCnt = (count * ratio);
   uint16_t i;
 
-  // Цикл формирования сигнала		
+  // Р¦РёРєР» С„РѕСЂРјРёСЂРѕРІР°РЅРёСЏ СЃРёРіРЅР°Р»Р°		
   for (i = 0; i < count; i++)
 	  if (i < fallCnt)
       pBuff[i] = minVal;

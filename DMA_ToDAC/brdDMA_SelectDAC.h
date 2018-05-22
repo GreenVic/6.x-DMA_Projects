@@ -3,32 +3,32 @@
 
 #include "brdDMA.h"
 
-// Настройки управления данными DMA
+// РќР°СЃС‚СЂРѕР№РєРё СѓРїСЂР°РІР»РµРЅРёСЏ РґР°РЅРЅС‹РјРё DMA
 DMA_CtrlDataInitTypeDef DMA_DataCtrl_Pri = 
 {
-  0,                            // DMA_SourceBaseAddr - Адрес источника данных
-  0,                            // DMA_DestBaseAddr   - Адрес назначения данных
-  DMA_SourceIncHalfword,        // DMA_SourceIncSize  - Автоувеличение адреса источника данных
-  DMA_DestIncNo,                // DMA_DestIncSize    - Автоувеличение адреса назначения данных
-  DMA_MemoryDataSize_HalfWord,  // DMA_MemoryDataSize - Размер пакета данных
-  DMA_Mode_Basic,               // DMA_Mode           - Режим работы DMA
-  10,                           // DMA_CycleSize      - Кол. данных на передачу (длина цикла DMA)
-  DMA_Transfers_1,              // DMA_NumContinuous  - Количество непрерывных передач (до арбитража)
-                                //   В 1986ВЕ1Т другие значения не использовать  - таймер вырабатывает req - DMA выводит весь период за один запрос таймера (CNT ==ARR)!
-                                //   В 1986ВЕ9х можно вплоть до DMA_Transfers_1  - таймер НЕ вырабатывает req (только sreq), DMA выводит по одному значению за один запрос таймера (CNT ==ARR)!
-  DMA_SourcePrivileged,         // DMA_SourceProtCtrl - Режим защиты передатчика
-  DMA_DestPrivileged            // DMA_DestProtCtrl   - Режим защиты приемника
+  0,                            // DMA_SourceBaseAddr - РђРґСЂРµСЃ РёСЃС‚РѕС‡РЅРёРєР° РґР°РЅРЅС‹С…
+  0,                            // DMA_DestBaseAddr   - РђРґСЂРµСЃ РЅР°Р·РЅР°С‡РµРЅРёСЏ РґР°РЅРЅС‹С…
+  DMA_SourceIncHalfword,        // DMA_SourceIncSize  - РђРІС‚РѕСѓРІРµР»РёС‡РµРЅРёРµ Р°РґСЂРµСЃР° РёСЃС‚РѕС‡РЅРёРєР° РґР°РЅРЅС‹С…
+  DMA_DestIncNo,                // DMA_DestIncSize    - РђРІС‚РѕСѓРІРµР»РёС‡РµРЅРёРµ Р°РґСЂРµСЃР° РЅР°Р·РЅР°С‡РµРЅРёСЏ РґР°РЅРЅС‹С…
+  DMA_MemoryDataSize_HalfWord,  // DMA_MemoryDataSize - Р Р°Р·РјРµСЂ РїР°РєРµС‚Р° РґР°РЅРЅС‹С…
+  DMA_Mode_Basic,               // DMA_Mode           - Р РµР¶РёРј СЂР°Р±РѕС‚С‹ DMA
+  10,                           // DMA_CycleSize      - РљРѕР». РґР°РЅРЅС‹С… РЅР° РїРµСЂРµРґР°С‡Сѓ (РґР»РёРЅР° С†РёРєР»Р° DMA)
+  DMA_Transfers_1,              // DMA_NumContinuous  - РљРѕР»РёС‡РµСЃС‚РІРѕ РЅРµРїСЂРµСЂС‹РІРЅС‹С… РїРµСЂРµРґР°С‡ (РґРѕ Р°СЂР±РёС‚СЂР°Р¶Р°)
+                                //   Р’ 1986Р’Р•1Рў РґСЂСѓРіРёРµ Р·РЅР°С‡РµРЅРёСЏ РЅРµ РёСЃРїРѕР»СЊР·РѕРІР°С‚СЊ  - С‚Р°Р№РјРµСЂ РІС‹СЂР°Р±Р°С‚С‹РІР°РµС‚ req - DMA РІС‹РІРѕРґРёС‚ РІРµСЃСЊ РїРµСЂРёРѕРґ Р·Р° РѕРґРёРЅ Р·Р°РїСЂРѕСЃ С‚Р°Р№РјРµСЂР° (CNT ==ARR)!
+                                //   Р’ 1986Р’Р•9С… РјРѕР¶РЅРѕ РІРїР»РѕС‚СЊ РґРѕ DMA_Transfers_1  - С‚Р°Р№РјРµСЂ РќР• РІС‹СЂР°Р±Р°С‚С‹РІР°РµС‚ req (С‚РѕР»СЊРєРѕ sreq), DMA РІС‹РІРѕРґРёС‚ РїРѕ РѕРґРЅРѕРјСѓ Р·РЅР°С‡РµРЅРёСЋ Р·Р° РѕРґРёРЅ Р·Р°РїСЂРѕСЃ С‚Р°Р№РјРµСЂР° (CNT ==ARR)!
+  DMA_SourcePrivileged,         // DMA_SourceProtCtrl - Р РµР¶РёРј Р·Р°С‰РёС‚С‹ РїРµСЂРµРґР°С‚С‡РёРєР°
+  DMA_DestPrivileged            // DMA_DestProtCtrl   - Р РµР¶РёРј Р·Р°С‰РёС‚С‹ РїСЂРёРµРјРЅРёРєР°
 };
   
-//  Настройки канала DMA
+//  РќР°СЃС‚СЂРѕР№РєРё РєР°РЅР°Р»Р° DMA
 DMA_ChannelInitTypeDef DMA_ChanCtrl = 
 {
-  &DMA_DataCtrl_Pri,        // DMA_PriCtrlData         - Основная структура управления данными
-  &DMA_DataCtrl_Pri,        // DMA_AltCtrlStr          - Альтернативная структура управления данными
+  &DMA_DataCtrl_Pri,        // DMA_PriCtrlData         - РћСЃРЅРѕРІРЅР°СЏ СЃС‚СЂСѓРєС‚СѓСЂР° СѓРїСЂР°РІР»РµРЅРёСЏ РґР°РЅРЅС‹РјРё
+  &DMA_DataCtrl_Pri,        // DMA_AltCtrlStr          - РђР»СЊС‚РµСЂРЅР°С‚РёРІРЅР°СЏ СЃС‚СЂСѓРєС‚СѓСЂР° СѓРїСЂР°РІР»РµРЅРёСЏ РґР°РЅРЅС‹РјРё
    0, //DMA_AHB_Privileged,      // DMA_ProtCtrl 
-   DMA_Priority_Default,    // DMA_Priority            - Приоритет канала
+   DMA_Priority_Default,    // DMA_Priority            - РџСЂРёРѕСЂРёС‚РµС‚ РєР°РЅР°Р»Р°
    DMA_BurstClear,          // DMA_UseBurst
-   DMA_CTRL_DATA_PRIMARY    // DMA_SelectDataStructure - Используемая структура управления данными
+   DMA_CTRL_DATA_PRIMARY    // DMA_SelectDataStructure - РСЃРїРѕР»СЊР·СѓРµРјР°СЏ СЃС‚СЂСѓРєС‚СѓСЂР° СѓРїСЂР°РІР»РµРЅРёСЏ РґР°РЅРЅС‹РјРё
 };
   
 #endif	// _BRD_DMA_SELECT_DAC_H

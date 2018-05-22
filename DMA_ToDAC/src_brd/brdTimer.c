@@ -7,23 +7,23 @@ void BRD_Timer_InitStructDef(TIMER_CntInitTypeDef *TimerInitStruct, uint32_t fre
   uint32_t presc = ceil((double) BRD_CPU_CLK / (rangeCNT * freq));
     
   TIMER_CntStructInit (TimerInitStruct);
-  TimerInitStruct->TIMER_Prescaler        = presc - 1;                          // Предделитель частоты
-  TimerInitStruct->TIMER_Period           = BRD_CPU_CLK / (presc * freq) - 1;   // Период таймера, (при -1 точнее выводится частоты сигнала в DAC по DMA)
+  TimerInitStruct->TIMER_Prescaler        = presc - 1;                          // РџСЂРµРґРґРµР»РёС‚РµР»СЊ С‡Р°СЃС‚РѕС‚С‹
+  TimerInitStruct->TIMER_Period           = BRD_CPU_CLK / (presc * freq) - 1;   // РџРµСЂРёРѕРґ С‚Р°Р№РјРµСЂР°, (РїСЂРё -1 С‚РѕС‡РЅРµРµ РІС‹РІРѕРґРёС‚СЃСЏ С‡Р°СЃС‚РѕС‚С‹ СЃРёРіРЅР°Р»Р° РІ DAC РїРѕ DMA)
 }
 
 
 void BRD_Timer_Init(Timer_Obj *TimerObj, TIMER_CntInitTypeDef *TimerInitStruct)
 {
-  // Включение тактирования таймера
+  // Р’РєР»СЋС‡РµРЅРёРµ С‚Р°РєС‚РёСЂРѕРІР°РЅРёСЏ С‚Р°Р№РјРµСЂР°
   RST_CLK_PCLKcmd (TimerObj->ClockMask, ENABLE);
 
-  // Деинициализация таймера
+  // Р”РµРёРЅРёС†РёР°Р»РёР·Р°С†РёСЏ С‚Р°Р№РјРµСЂР°
   TIMER_DeInit (TimerObj->TIMERx);
 
-  // Выбор предделителя тактовой частоты таймера 
+  // Р’С‹Р±РѕСЂ РїСЂРµРґРґРµР»РёС‚РµР»СЏ С‚Р°РєС‚РѕРІРѕР№ С‡Р°СЃС‚РѕС‚С‹ С‚Р°Р№РјРµСЂР° 
   TIMER_BRGInit (TimerObj->TIMERx, TimerObj->ClockBRG);
 
- // Инициализация таймера
+ // РРЅРёС†РёР°Р»РёР·Р°С†РёСЏ С‚Р°Р№РјРµСЂР°
   TIMER_CntInit (TimerObj->TIMERx, TimerInitStruct);
 }
 
@@ -34,19 +34,19 @@ void BRD_Timer_Start(Timer_Obj *TimerObj)
 
 void BRD_Timer_InitIRQ(Timer_Obj *TimerObj, uint32_t priority)
 {
-  // Выбор источников прерываний
+  // Р’С‹Р±РѕСЂ РёСЃС‚РѕС‡РЅРёРєРѕРІ РїСЂРµСЂС‹РІР°РЅРёР№
   TIMER_ITConfig (TimerObj->TIMERx, TimerObj->EventIT, ENABLE);
   
-  // Назначение приоритета аппаратных прерываний от таймера
+  // РќР°Р·РЅР°С‡РµРЅРёРµ РїСЂРёРѕСЂРёС‚РµС‚Р° Р°РїРїР°СЂР°С‚РЅС‹С… РїСЂРµСЂС‹РІР°РЅРёР№ РѕС‚ С‚Р°Р№РјРµСЂР°
   NVIC_SetPriority (TimerObj->IRQn, 1);
 
-  // Включение аппаратных прерываний от таймера 
+  // Р’РєР»СЋС‡РµРЅРёРµ Р°РїРїР°СЂР°С‚РЅС‹С… РїСЂРµСЂС‹РІР°РЅРёР№ РѕС‚ С‚Р°Р№РјРµСЂР° 
   NVIC_EnableIRQ (TimerObj->IRQn);
 }
 
-//// Обработчик аппаратных прерываний от таймера TIMER1
+//// РћР±СЂР°Р±РѕС‚С‡РёРє Р°РїРїР°СЂР°С‚РЅС‹С… РїСЂРµСЂС‹РІР°РЅРёР№ РѕС‚ С‚Р°Р№РјРµСЂР° TIMER1
 //void Timer1_IRQHandler (void)
 //{
-//  // Сброс прерывания от таймера TIMER1
+//  // РЎР±СЂРѕСЃ РїСЂРµСЂС‹РІР°РЅРёСЏ РѕС‚ С‚Р°Р№РјРµСЂР° TIMER1
 //  TIMER_ClearITPendingBit (MDR_TIMER1, TIMER_STATUS_CNT_ARR);
 //}
