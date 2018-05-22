@@ -8,18 +8,18 @@
 #include "brdMath.h"
 #include "brdDMA_SelectDAC.h"
 
-//  ОШИБКИ
+//  РћРЁРР‘РљР
 //#define BUG_SSPx_ACTIVATE
 
 
 //  Clock
 #define  PLL_MUX           RST_CLK_CPU_PLLmul10
 
-//  Индикация работы
+//  РРЅРґРёРєР°С†РёСЏ СЂР°Р±РѕС‚С‹
 #define  LED_DMA_CYCLE     BRD_LED_1
 #define  LED_DMA_ON_INIT   BRD_LED_2
 
-//  Различия при инициализвации DMA
+//  Р Р°Р·Р»РёС‡РёСЏ РїСЂРё РёРЅРёС†РёР°Р»РёР·РІР°С†РёРё DMA
 #ifdef USE_MDR1986VE9x
  
   #define  DAC_PIN_INIT   BRD_DAC2_PortInit()
@@ -38,7 +38,6 @@
   #define  DAC_REG_DATA   MDR_DAC->DAC1_DATA
 
   #define  DMA_CHANNEL         DMA_Channel_SREQ_TIM1
-  //#define  DMA_CHANNEL         DMA_Channel_REQ_TIM1
   
   #define  TIMER_CALL_DMA_ENA  TIMER_DMACmd (MDR_TIMER1, TIMER_STATUS_CNT_ARR, TIMER_DMA_Channel0, ENABLE)
   
@@ -47,10 +46,10 @@
 
 uint32_t DMA_ChannelCtrl;
 
-//  Выходной сигнал ЦАП 1КГц
+//  Р’С‹С…РѕРґРЅРѕР№ СЃРёРіРЅР°Р» Р¦РђРџ 1РљР“С†
 #define  SIGNAL_FREQ_HZ   1000
 
-//  Массив значений сигнала по оси времени
+//  РњР°СЃСЃРёРІ Р·РЅР°С‡РµРЅРёР№ СЃРёРіРЅР°Р»Р° РїРѕ РѕСЃРё РІСЂРµРјРµРЅРё
 #define  DATA_COUNT       400
 uint16_t signal[DATA_COUNT] __attribute__((section("EXECUTABLE_MEMORY_SECTION"))) __attribute__ ((aligned (4)));
 
@@ -130,9 +129,8 @@ uint32_t CheckDoLedSwitch(void)
   static uint32_t IqrCount = 0;
   
   ++IqrCount;
-  //if (IqrCount > SIGNAL_FREQ_HZ)
-  if (IqrCount > 1000)
-  {
+  if (IqrCount > SIGNAL_FREQ_HZ)
+    {
     IqrCount = 0;
     return 1;   //  Do switch Led - 1Hz
   }
@@ -146,7 +144,7 @@ void DMA_IRQHandler (void)
   BRD_DMA_Write_ChannelCtrl(DMA_CHANNEL, DMA_ChannelCtrl);
   DMA_Cmd(DMA_CHANNEL, ENABLE);
  
-  //  CASE2: Медленно, дает артефакт сигнала (см. осциллографом) при PLL_MUX < RST_CLK_CPU_PLLmul3 
+  //  CASE2: РњРµРґР»РµРЅРЅРѕ, РґР°РµС‚ Р°СЂС‚РµС„Р°РєС‚ СЃРёРіРЅР°Р»Р° (СЃРј. РѕСЃС†РёР»Р»РѕРіСЂР°С„РѕРј) РїСЂРё PLL_MUX < RST_CLK_CPU_PLLmul3 
 //  DMA_Init(DMA_CHANNEL, &DMA_ChanCtrl); 
   
   IrQ_On = 1; 
